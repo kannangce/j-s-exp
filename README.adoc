@@ -1,1 +1,17 @@
-WIP
+## About:
+
+`j-s-exp` is a custom s-expression evaluator, to be used in your java modules, if at all you have to write a simple DSLs.
+
+## Rationale & Use case:
+
+Please go through the https://github.com/kannangce/j-s-exp/wiki/Rationale[wiki] for rationale and use cases for the library.
+
+## Usage:
+<To be updated.>
+
+
+## Credits:
+
+The implementation inspired by https://github.com/ysmood/nisp[NISP], which does the similar thing in JS. In addition to what 
+is supported in NISP, `j-s-exp` provides the support for context, which helps your evaluator to work with the states and can be
+integrated with your application.
