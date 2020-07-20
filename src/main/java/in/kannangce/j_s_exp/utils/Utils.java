@@ -1,4 +1,4 @@
-package in.kannangce.jisp.utils;
+package in.kannangce.j_s_exp.utils;
 
 /**
  * Class containing the utilities
