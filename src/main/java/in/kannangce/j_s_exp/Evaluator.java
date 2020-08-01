@@ -1,11 +1,5 @@
 package in.kannangce.j_s_exp;
 
-import static in.kannangce.j_s_exp.Operators.FN_ALWAYS;
-import static in.kannangce.j_s_exp.Operators.FN_IDENTITY;
-import static in.kannangce.j_s_exp.Operators.IS_MATCHES;
-import static in.kannangce.j_s_exp.Operators.IS_TRUE;
-import static in.kannangce.j_s_exp.Operators.MAC_IF_ELSE;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,10 +17,9 @@ public class Evaluator {
 
 	private Object context;
 
-	private final Map<String, CustomFunction> allowedFns = new HashMap<>(
-			Map.of("matches", IS_MATCHES, "always", FN_ALWAYS, "true?", IS_TRUE, "identity", FN_IDENTITY));
+	private final Map<String, CustomFunction> allowedFns = new HashMap<>();
 
-	private final Map<String, CustomMacro> allowedMacros = new HashMap<>(Map.of("if", MAC_IF_ELSE));
+	private final Map<String, CustomMacro> allowedMacros = new HashMap<>();
 
 	/**
 	 * Creates an evaluator instance

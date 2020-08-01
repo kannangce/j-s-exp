@@ -37,7 +37,7 @@ public class Operators {
 	 * Operator that checks if the first parameter is true as defined by
 	 * {@link Boolean#valueOf(String)}. The remaining parameters will be ignored.
 	 */
-	public static CustomFunction IS_TRUE = (Object contenxt, Object... objs) -> {
+	public static CustomFunction FN_IS_TRUE = (Object contenxt, Object... objs) -> {
 		if (objs == null || objs.length == 0 || objs[0] == null) {
 			return false;
 		}
@@ -48,7 +48,7 @@ public class Operators {
 	 * Operator that checks if the first parameter matches with the pattern provided
 	 * in the second argument.
 	 */
-	public static CustomFunction IS_MATCHES = (Object contenxt, Object... objs) -> {
+	public static CustomFunction FN_IS_MATCHES = (Object contenxt, Object... objs) -> {
 
 		if (objs.length != 2) {
 			throw new IllegalArgumentException("Not sufficient arguments for matches");
@@ -69,7 +69,7 @@ public class Operators {
 	 * evaluation</li>
 	 * </ol>
 	 */
-	public static CustomMacro MAC_IF_ELSE = (Evaluator evaluator, Object... objs) -> {
+	public static CustomMacro MC_IF_ELSE = (Evaluator evaluator, Object... objs) -> {
 
 		Object condition = nullIfUnavailable(objs, 0);
 

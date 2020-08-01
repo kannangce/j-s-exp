@@ -1,77 +1,76 @@
 package in.kannangce.j_s_exp;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import in.kannangce.exception.UnsupportedOperatorException;
 
 public class EvaluatorTest {
 
-	private Evaluator<Object> evaluatorInstance;
-
 	private Object ctx = null;
-	
-	Object a = new Object[] {"", 2};
 
-	@Before
-	public void init() throws Exception {
-		Evaluator.CustomFunction<Object> printFunction = (Object ctx,
-				Object[] params) -> {
-			System.out.println(params[0]);
-			return null;
-		};
-		evaluatorInstance = new Evaluator<>(Map.of("println", printFunction),
-				null);
+	private static ObjectMapper mapper = new ObjectMapper();
+
+	Object a = new Object[] { "", 2 };
+
+	@Test
+	public void testAllowedFunctions() throws Exception {
+
+		Evaluator evaluatorInstance = new Evaluator(null, Map.of("identity", Operators.FN_IDENTITY), null);
+
+		List<Object> identityOperator = parseExpression("[\"identity\", \"result\"]");
+
+		assertEquals(evaluatorInstance.evaluate(identityOperator), "result",
+				() -> "Identity function to return the first parameter as is");
 	}
 
 	@Test
-	public void testIf() throws Exception {
-		evaluatorInstance.evaluate(null,
-				Arrays.asList("if", true,
-						Arrays.asList("println", "true-case"),
-						Arrays.asList("println", "false-case")));
+	public void testNestedFunctions() throws Exception {
+		Evaluator evaluatorInstance = new Evaluator(null,
+				Map.of("identity", Operators.FN_IDENTITY, "matches", Operators.FN_IS_MATCHES), null);
+
+		List<Object> nestedOperators = parseExpression("[\"matches\" , [\"identity\", \"result\"], \"^r.*t$\"]");
+
+		assertEquals(evaluatorInstance.evaluate(nestedOperators), true,
+				() -> "matches wrapping identity to return true");
 	}
 
 	@Test
-	public void testMatchesTrue() throws Exception {
-		Object matchesResult = evaluatorInstance.evaluate(ctx,
-				Arrays.asList("matches", "someValue", "s.*e"));
-		assertTrue(Boolean.valueOf(String.valueOf(matchesResult)));
+	public void testUnallowedFunctions() throws Exception {
+		Evaluator evaluatorInstance = new Evaluator(null, Map.of("identity", Operators.FN_IDENTITY), null);
+
+		List<Object> nestedOperators = parseExpression("[\"matches\" , [\"identity\", \"result\"], \"^r.*t$\"]");
+
+		assertThrows(UnsupportedOperatorException.class, () -> evaluatorInstance.evaluate(nestedOperators),
+				() -> "Expression expected to throw exception when not added to allowed functions");
 	}
 
 	@Test
-	public void testMatchesFalse() throws Exception {
-		Object matchesResult = evaluatorInstance.evaluate(ctx,
-				Arrays.asList("matches", "someValue", "sameValue"));
-		assertFalse(Boolean.valueOf(String.valueOf(matchesResult)));
+	public void testMacro() throws Exception {
+		Evaluator evaluatorInstance = new Evaluator(null,
+				Map.of("true?", Operators.FN_IS_TRUE, "identity", Operators.FN_IDENTITY), // If uses those 2 operators.
+																							// It's caller
+																							// responsibility to ensure
+																							// the dependencies
+				Map.of("if-else", Operators.MC_IF_ELSE));
+
+		List<Object> expressionWithMacro = parseExpression("[\"if-else\" , true , \"true-path\", \"false-path\"]");
+
+		assertEquals(evaluatorInstance.evaluate(expressionWithMacro), "true-path",
+				() -> "if with condition true expected to returh true-path");
 	}
 
-	@Test(expected = IllegalArgumentException.class)
-	public void testMatchesNotEnoughParams() throws Exception {
-		evaluatorInstance.evaluate(ctx, Arrays.asList("matches", "someValue"));
+	private static List<Object> parseExpression(String expression) throws Exception {
+		return mapper.readValue(expression, new TypeReference<List<Object>>() {
+		});
 	}
 
-	@Test
-	public void testAlways() throws Exception {
-		Object evalResult = evaluatorInstance.evaluate(ctx,
-				Arrays.asList("always"));
-		assertTrue(Boolean.valueOf(String.valueOf(evalResult)));
-	}
-
-	@Test(expected = UnsupportedOperatorException.class)
-	public void testNotAllowedOperators() throws Exception {
-		evaluatorInstance.evaluate(ctx, Arrays.asList("invalid-op"));
-	}
-
-	@Test(expected = UnsupportedOperatorException.class)
-	public void testNotAllowedOperatorsNested() throws Exception {
-		evaluatorInstance.evaluate(ctx,
-				Arrays.asList("matches", "someval", Arrays.asList("invalid-op")));
-	}
 }
