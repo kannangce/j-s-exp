@@ -4,10 +4,13 @@
 
 ## Rationale & Use case:
 
-Please go through the https://github.com/kannangce/j-s-exp/wiki/Rationale[wiki] for rationale and use cases for the library.
+Please go through,
+- https://github.com/kannangce/j-s-exp/wiki/Problem-it-solves[This page] to understand the problem it solves.
+- The https://github.com/kannangce/j-s-exp/wiki/Q&As[Q&A] for the typical question that you might get.
 
 ## Usage:
-<To be updated.>
+
+- Please go through the https://github.com/kannangce/j-s-exp/wiki/Usage[usage wiki] and the https://github.com/kannangce/j-s-exp/blob/master/src/test/java/in/kannangce/j_s_exp/EvaluatorTest.java[test class] to understand the usage.
 
 
 ## Credits:
