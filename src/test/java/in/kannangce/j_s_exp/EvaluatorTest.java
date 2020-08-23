@@ -15,62 +15,130 @@ import in.kannangce.exception.UnsupportedOperatorException;
 
 public class EvaluatorTest {
 
-	private Object ctx = null;
+    private Object ctx = null;
 
-	private static ObjectMapper mapper = new ObjectMapper();
+    @Test
+    public void testAllowedFunctions() throws Exception {
 
-	Object a = new Object[] { "", 2 };
+        Evaluator evaluatorInstance = new Evaluator(null, Map.of("identity", Operators.FN_IDENTITY), null);
 
-	@Test
-	public void testAllowedFunctions() throws Exception {
+        List<Object> identityOperator = parseExpression("[\"identity\", \"result\"]");
 
-		Evaluator evaluatorInstance = new Evaluator(null, Map.of("identity", Operators.FN_IDENTITY), null);
+        assertEquals(evaluatorInstance.evaluate(identityOperator), "result",
+                () -> "Identity function to return the first parameter as is");
+    }
 
-		List<Object> identityOperator = parseExpression("[\"identity\", \"result\"]");
+    @Test
+    public void testNestedFunctions() throws Exception {
+        Evaluator evaluatorInstance = new Evaluator(null,
+                Map.of("identity", Operators.FN_IDENTITY, "matches", Operators.FN_IS_MATCHES), null);
 
-		assertEquals(evaluatorInstance.evaluate(identityOperator), "result",
-				() -> "Identity function to return the first parameter as is");
-	}
+        List<Object> nestedOperators = parseExpression("[\"matches\" , [\"identity\", \"result\"], \"^r.*t$\"]");
 
-	@Test
-	public void testNestedFunctions() throws Exception {
-		Evaluator evaluatorInstance = new Evaluator(null,
-				Map.of("identity", Operators.FN_IDENTITY, "matches", Operators.FN_IS_MATCHES), null);
+        assertEquals(evaluatorInstance.evaluate(nestedOperators), true,
+                () -> "matches wrapping identity to return true");
+    }
 
-		List<Object> nestedOperators = parseExpression("[\"matches\" , [\"identity\", \"result\"], \"^r.*t$\"]");
+    @Test
+    public void testUnallowedFunctions() throws Exception {
+        Evaluator evaluatorInstance = new Evaluator(null, Map.of("identity", Operators.FN_IDENTITY), null);
 
-		assertEquals(evaluatorInstance.evaluate(nestedOperators), true,
-				() -> "matches wrapping identity to return true");
-	}
+        List<Object> nestedOperators = parseExpression("[\"matches\" , [\"identity\", \"result\"], \"^r.*t$\"]");
 
-	@Test
-	public void testUnallowedFunctions() throws Exception {
-		Evaluator evaluatorInstance = new Evaluator(null, Map.of("identity", Operators.FN_IDENTITY), null);
+        assertThrows(UnsupportedOperatorException.class, () -> evaluatorInstance.evaluate(nestedOperators),
+                () -> "Expression expected to throw exception when not added to allowed functions");
+    }
 
-		List<Object> nestedOperators = parseExpression("[\"matches\" , [\"identity\", \"result\"], \"^r.*t$\"]");
+    @Test
+    public void testMacro() throws Exception {
+        Evaluator evaluatorInstance = new Evaluator(null,
+                Map.of("true?", Operators.FN_IS_TRUE, "identity", Operators.FN_IDENTITY), // If uses those 2 operators.
+                // It's caller
+                // responsibility to ensure
+                // the dependencies
+                Map.of("if-else", Operators.MC_IF_ELSE));
 
-		assertThrows(UnsupportedOperatorException.class, () -> evaluatorInstance.evaluate(nestedOperators),
-				() -> "Expression expected to throw exception when not added to allowed functions");
-	}
+        List<Object> expressionWithMacro = parseExpression("[\"if-else\" , true , \"true-path\", \"false-path\"]");
 
-	@Test
-	public void testMacro() throws Exception {
-		Evaluator evaluatorInstance = new Evaluator(null,
-				Map.of("true?", Operators.FN_IS_TRUE, "identity", Operators.FN_IDENTITY), // If uses those 2 operators.
-																							// It's caller
-																							// responsibility to ensure
-																							// the dependencies
-				Map.of("if-else", Operators.MC_IF_ELSE));
+        assertEquals(evaluatorInstance.evaluate(expressionWithMacro), "true-path",
+                () -> "if with condition true expected to returh true-path");
+    }
 
-		List<Object> expressionWithMacro = parseExpression("[\"if-else\" , true , \"true-path\", \"false-path\"]");
+    @Test
+    public void testMacroWithFunction() throws Exception {
+        Evaluator evaluatorInstance = new Evaluator(null,
+                Map.of("true?", Operators.FN_IS_TRUE, "identity", Operators.FN_IDENTITY, "matches", Operators.FN_IS_MATCHES), // If uses those 2 operators.
+                // It's caller
+                // responsibility to ensure
+                // the dependencies
+                Map.of("if-else", Operators.MC_IF_ELSE));
 
-		assertEquals(evaluatorInstance.evaluate(expressionWithMacro), "true-path",
-				() -> "if with condition true expected to returh true-path");
-	}
+        List<Object> expressionWithMacroAndFunction = parseExpression("[\"if-else\" ," +
+                " [\"matches\", \"result\", \"^r.*t$\"] , " +
+                "\"matches-returned true\", " +
+                "\"matches returned false̵\"]");
 
-	private static List<Object> parseExpression(String expression) throws Exception {
-		return mapper.readValue(expression, new TypeReference<List<Object>>() {
-		});
-	}
+        assertEquals(evaluatorInstance.evaluate(expressionWithMacroAndFunction), "matches-returned true",
+                () -> "if with condition true expected to return true-path");
+    }
 
+    @Test
+    public void testNestedMacroWithFunction() throws Exception {
+        Evaluator evaluatorInstance = new Evaluator(null,
+                Map.of("true?", Operators.FN_IS_TRUE, "identity", Operators.FN_IDENTITY, "matches", Operators.FN_IS_MATCHES), // If uses those 2 operators.
+                // It's caller
+                // responsibility to ensure
+                // the dependencies
+                Map.of("if-else", Operators.MC_IF_ELSE));
+
+        List<Object> expressionWithMacroAndFunction = parseExpression("[\"if-else\", true, " +
+                "[\"if-else\" ," +
+                " [\"matches\", \"result\", \"^r.*t$\"] , " +
+                "\"matches-returned true\", " +
+                "\"matches returned false̵\"]]");
+
+        assertEquals(evaluatorInstance.evaluate(expressionWithMacroAndFunction), "matches-returned true",
+                () -> "if with condition true expected to return true-path");
+    }
+
+    @Test
+    public void testFunctionCallWithContextVariables() throws Exception {
+
+        Map<String, String> context = Map.of("1", "some result");
+
+        Evaluator.CustomFunction getContextValue = (c, params) -> ((Map) c).get(params[0].toString());
+
+        Evaluator evaluatorInstance = new Evaluator(context,
+                Map.of("true?", Operators.FN_IS_TRUE,
+                        "identity", Operators.FN_IDENTITY,
+                        "matches", Operators.FN_IS_MATCHES,
+                        "getContextVal", getContextValue), // If uses those 2 operators.
+                // It's caller
+                // responsibility to ensure
+                // the dependencies
+                Map.of("if-else", Operators.MC_IF_ELSE));
+
+        List<Object> expressionWithMacroAndFunction = parseExpression("[\"if-else\", true, " +
+                "[\"if-else\" ," +
+                " [\"matches\", [\"getContextVal\", \"1\"], \"^r.*t$\"] , " +
+                "\"context value matched\", " +
+                "\"context value didn't match\"]]");
+
+        assertEquals(evaluatorInstance.evaluate(expressionWithMacroAndFunction), "context value didn't match",
+                () -> "if with condition true expected to return true-path");
+
+    }
+
+    /**
+     * Parses given JSON-List and returns equivalent tree(nested-list).
+     *
+     * @param expression Json List string to be parsed.
+     * @return Parsed list
+     * @throws Exception When the given JSON is not a list or if it is malformed.
+     */
+    public static List<Object> parseExpression(String expression) throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+        return mapper.readValue(expression, new TypeReference<List<Object>>() {
+        });
+    }
 }

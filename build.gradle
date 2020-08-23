@@ -9,7 +9,11 @@
 plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
+    id 'java'
 }
+
+targetCompatibility = 1.11
+sourceCompatibility = 1.11
 
 repositories {
     // Use jcenter for resolving dependencies.
