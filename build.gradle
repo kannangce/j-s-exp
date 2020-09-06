@@ -6,14 +6,34 @@
  * User Manual available at https://docs.gradle.org/6.0/userguide/java_library_plugin.html
  */
 
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3"
+    }
+}
+
 plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
     id 'java'
+    id 'maven-publish'
+    id 'io.codearte.nexus-staging' version '0.22.0'
 }
 
 targetCompatibility = 1.11
 sourceCompatibility = 1.11
+
+group='in.kannangce'
+version=0.9
+
+println "Publishing with..."
+println ossrhUser
+println project.hasProperty('release')
+println "--------------------"
+
 
 repositories {
     // Use jcenter for resolving dependencies.
@@ -31,4 +51,84 @@ dependencies {
     testImplementation 'org.junit.jupiter:junit-jupiter:5.6.2'
     // To use expression in readable way in the tests
 	testCompile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.1'
+}
+
+
+
+if (project.hasProperty('release')) {
+
+    subprojects {
+
+        task javadocJar(type: Jar) {
+            archiveClassifier.set("sources")
+            from javadoc
+        }
+
+        task sourcesJar(type: Jar) {
+            archiveClassifier.set("javadoc")
+            from sourceSets.main.allSource
+        }
+
+        artifacts {
+            archives javadocJar, sourcesJar
+        }
+    }
+
+    allprojects {
+        apply plugin: 'signing'
+        apply plugin: 'maven'
+
+        // Signature of artifacts
+        signing {
+            sign configurations.archives
+        }
+
+        // OSSRH publication
+        uploadArchives {
+            repositories {
+                mavenDeployer {
+                    // POM signature
+                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
+                    // Target repository
+                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                        authentication(userName: ossrhUser, password: ossrhPassword)
+                    }
+                    pom.project {
+                        name project.name
+                        description project.description
+                        packaging 'jar'
+                        url 'https://github.com/your/project'
+
+                        scm {
+                            connection 'scm:git:https://github.com/kannangce/j-s-exp.git'
+                            developerConnection 'scm:git:git@github.com/kannangce/j-s-exp.git'
+                            url 'https://github.com/kannangce/j-s-exp.git'
+                        }
+
+                        licenses {
+                            license {
+                                name 'Apache 2.0'
+                                url 'https://opensource.org/licenses/Apache-2.0'
+                                distribution 'repo'
+                            }
+                        }
+
+                        developers {
+                            developer {
+                                id = 'kannangce'
+                                name = 'Kannan Ramamoorthy'
+                                email = 'kannanrgce@gmail.com'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+}
+
+nexusStaging {
+    username = ossrhUser
+    password = ossrhPassword
 }
