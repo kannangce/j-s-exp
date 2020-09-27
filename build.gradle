@@ -6,20 +6,12 @@
  * User Manual available at https://docs.gradle.org/6.0/userguide/java_library_plugin.html
  */
 
-buildscript {
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.5.3"
-    }
-}
-
 plugins {
     // Apply the java-library plugin to add support for Java Library
     id 'java-library'
     id 'java'
     id 'maven-publish'
+    id 'signing'
     id 'io.codearte.nexus-staging' version '0.22.0'
 }
 
@@ -27,12 +19,8 @@ targetCompatibility = 1.11
 sourceCompatibility = 1.11
 
 group='in.kannangce'
-version=0.9
-
-println "Publishing with..."
-println ossrhUser
-println project.hasProperty('release')
-println "--------------------"
+version=1.0
+description="S-Expression DSL evaluator in Java"
 
 
 repositories {
@@ -42,9 +30,6 @@ repositories {
 }
 
 dependencies {
-    // This dependency is exported to consumers, that is to say found on their compile classpath.
-    api 'org.apache.commons:commons-math3:3.6.1'
-    
     compile "com.github.joschi.jackson:jackson-datatype-threetenbp:2.6.4"
 
     // Use JUnit test framework
@@ -54,78 +39,60 @@ dependencies {
 }
 
 
+javadoc {
+    title = 'j-s-exp'
+}
 
-if (project.hasProperty('release')) {
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
 
-    subprojects {
-
-        task javadocJar(type: Jar) {
-            archiveClassifier.set("sources")
-            from javadoc
-        }
-
-        task sourcesJar(type: Jar) {
-            archiveClassifier.set("javadoc")
-            from sourceSets.main.allSource
-        }
-
-        artifacts {
-            archives javadocJar, sourcesJar
-        }
-    }
-
-    allprojects {
-        apply plugin: 'signing'
-        apply plugin: 'maven'
-
-        // Signature of artifacts
-        signing {
-            sign configurations.archives
-        }
-
-        // OSSRH publication
-        uploadArchives {
-            repositories {
-                mavenDeployer {
-                    // POM signature
-                    beforeDeployment { MavenDeployment deployment -> signing.signPom(deployment) }
-                    // Target repository
-                    repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
-                        authentication(userName: ossrhUser, password: ossrhPassword)
+publishing {
+    publications {
+        publish(MavenPublication) {
+            from components.java
+            pom {
+                name = project.name
+                description = project.description
+                url = 'https://github.com/kannangce/j-s-exp'
+                licenses {
+                    license {
+                        name = 'Apache 2.0'
+                        url = 'https://opensource.org/licenses/Apache-2.0'
                     }
-                    pom.project {
-                        name project.name
-                        description project.description
-                        packaging 'jar'
-                        url 'https://github.com/your/project'
-
-                        scm {
-                            connection 'scm:git:https://github.com/kannangce/j-s-exp.git'
-                            developerConnection 'scm:git:git@github.com/kannangce/j-s-exp.git'
-                            url 'https://github.com/kannangce/j-s-exp.git'
-                        }
-
-                        licenses {
-                            license {
-                                name 'Apache 2.0'
-                                url 'https://opensource.org/licenses/Apache-2.0'
-                                distribution 'repo'
-                            }
-                        }
-
-                        developers {
-                            developer {
-                                id = 'kannangce'
-                                name = 'Kannan Ramamoorthy'
-                                email = 'kannanrgce@gmail.com'
-                            }
-                        }
+                }
+                developers {
+                    developer {
+                        id = 'kannangce'
+                        name = 'Kannan Ramamoorthy'
+                        email = 'kannanrgce@gmail.com'
                     }
+                }
+
+                scm {
+                    connection = 'scm:git:https://github.com/kannangce/j-s-exp.git'
+                    developerConnection = 'scm:git:git@github.com/kannangce/j-s-exp.git'
+                    url = 'https://github.com/kannangce/j-s-exp.git'
                 }
             }
         }
-
     }
+
+    repositories {
+        maven {
+            name = 'SonatypeOssrhRepo'
+            url = 'https://oss.sonatype.org/service/local/staging/deploy/maven2'
+            credentials {
+                username "$ossrhUser"
+                password "$ossrhPassword"
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.publish
 }
 
 nexusStaging {

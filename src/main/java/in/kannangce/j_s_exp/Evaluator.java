@@ -23,9 +23,13 @@ public class Evaluator {
     /**
      * Creates an evaluator instance
      *
-     * @param allowedFns The list of allowed operators, where they key is operator
-     *                   and value is respective {@link CustomFunction}
-     *                   implementation.
+     * @param context       The context in which the evaluation will be done.
+     * @param allowedFns    The list of allowed operators, where they key is operator
+     *                      and value is respective {@link CustomFunction}
+     *                      implementation.
+     * @param allowedMacros The list of allowed operators, where they key is operator
+     *                      and value is respective {@link CustomMacro}
+     *                      implementation.
      */
     public Evaluator(Object context, Map<String, CustomFunction> allowedFns, Map<String, CustomMacro> allowedMacros) {
         this.context = context;
@@ -56,9 +60,7 @@ public class Evaluator {
     /**
      * Evaluates the given s-expression in the form of List. The operators in the
      * s-expressions must be one of those in the {@link Evaluator#allowedFns}
-     *
-     * @param context The context variable to be made available for all the
-     *                operators.
+
      * @param tree    The s-expression to be evaluated.
      * @return The return value of the evaluated expression.
      * @throws UnsupportedOperatorException If the given expression doesn't adhere
