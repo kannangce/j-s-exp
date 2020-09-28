@@ -19,4 +19,4 @@ Please go through,
 
 The implementation inspired by https://github.com/ysmood/nisp[NISP], which does the similar thing in JS. In addition to what 
 is supported in NISP, `j-s-exp` provides the support for context, which helps your evaluator to work with the states and can be
-integrated with your application.
+integrated with your application, and also lets you use multiple instance of evaluator to be operated in different context.
