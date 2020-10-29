@@ -10,6 +10,8 @@ Please go through,
 
 - The https://github.com/kannangce/j-s-exp/wiki/Q&As[Q&A] for the typical question that you might get.
 
+- An http://kannangce.in/seeing-code-in-the-config.html[article] to explain the significance of the approach.
+
 ## Usage:
 
 - Please go through the https://github.com/kannangce/j-s-exp/wiki/Usage[usage wiki] and the https://github.com/kannangce/j-s-exp/blob/master/src/test/java/in/kannangce/j_s_exp/EvaluatorTest.java[test class] to understand the usage.
